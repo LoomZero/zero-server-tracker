@@ -6,6 +6,7 @@ const JSONFile = require('zero-kit/src/util/JSONFile');
 const FileLogger = require('zero-kit/src/util/FileLogger');
 
 const User = require('./User');
+const RedmineConnector = require('./connector/RedmineConnector');
 const RedmineError = require('./error/RedmineError');
 
 module.exports = class App {
@@ -20,13 +21,13 @@ module.exports = class App {
   /** @returns {RedmineConnector} */
   get redmine() {
     if (this._redmine === null) {
-      const connection = this.app.config.get('defaults.redmine.api');
-      const config = this.app.config.get('redmine.api');
+      const connection = this.config.get('defaults.redmine.api');
+      const config = this.config.get('redmine.api');
 
       for (const key in config) {
         connection[key] = config[key];
       }
-      this._redmine = new RedmineConnector(this.app, connection);
+      this._redmine = new RedmineConnector(this, connection);
     }
     return this._redmine;
   }
@@ -50,7 +51,9 @@ module.exports = class App {
     await this.eachUser(async (/** @type {User} */user) => {
       user.logger.info('Start user ' + await user.getName());
       await user.ensure();
-      const trackings = (await user.toggl.getTimeEntries('-1 weeks', 'now')).filter((v) => {
+      const from = this.config.get('tracking.from', '-1 days');
+      const to = this.config.get('tracking.to', 'now');
+      const trackings = (await user.toggl.getTimeEntries(from, to)).filter((v) => {
         if (v.description && ignore.includes(v.description.trim())) return false;
         return v.stop !== undefined && (v.tags === undefined || (!v.tags.includes('t:transmitted') && !v.tags.includes('t:no-transmit')));
       });
@@ -67,18 +70,22 @@ module.exports = class App {
           failedTrackings.push({ tracking, issueMatch });
         } else {
           try {
+            const comment = issueMatch.groups.comment ?? '[no comment]';
             const issue = await user.redmine.getIssue(issueMatch.groups.issue);
             const info = user.getRedmineInfo();
             const customFields = this.getCustomFields(user, tracking);
             const hours = this.getRoundHours(tracking.duration, roundMinutes, roundMinMinutes);
 
-            user.logger.info('Create tracking {hours} for {id} with comment {comment} ...', {id: issue.id, comment: issueMatch.groups.comment, hours: hours + 'h'});
-            await user.redmine.createTimeEntry(issue.id, hours, info.activity, issueMatch.groups.comment, Moment.unix(Strtotime(tracking.start)), customFields);
+            user.logger.info('Create tracking {hours} for {id} with comment {comment} ...', {id: issue.id, comment: comment, hours: hours + 'h'});
+            await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(tracking.start)), customFields);
             await user.toggl.addTag([tracking.id], ['t:transmitted']);
           } catch (error) {
             if (error instanceof RedmineError) {
               user.logger.error(error.ident + ' - {id}', {id: issueMatch.groups.issue});
               failedTrackings.push({ tracking, error, issueMatch });
+            } else {
+              this.log.error(error);
+              this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
             }
           }
         }
@@ -90,10 +97,11 @@ module.exports = class App {
       const noMatch = [];
       for (const failed of failedTrackings) {
         const date = Moment(failed.tracking.start).format('DD.MM.YYYY');
+        const comment = failed.tracking.description ?? '[no comment]';
         if (failed.error) {
-          errors.push('[' + date + '] ' + failed.tracking.description + ' - "' + failed.error.ident + '" : `' + failed.issueMatch.groups.issue + '`');
+          errors.push('`[' + date + ']` ' + comment + ' - "' + failed.error.ident + '" : `' + failed.issueMatch.groups.issue + '`');
         } else {
-          noMatch.push('[' + date + '] ' + failed.tracking.description);
+          noMatch.push('`[' + date + ']` ' + comment);
         }
       }
       
@@ -112,15 +120,19 @@ module.exports = class App {
       }
 
       if (errors.length || noMatch.length) {
-        const issue = this.config.get('tracking.trackingIssue', {});
-
-        issue.subject = 'Tracking für ' + await user.getName();
-        issue.description = description;
-
-        await this.redmine.createIssue(issue);
+        await this.createIssue('Tracking für ' + await user.getName() + ' - [' + this.logger.getTimeLog() + ']', description);
       }
       user.logger.info('End user ' + await user.getName());
     });
+  }
+
+  async createIssue(subject, description) {
+    const issue = this.config.get('tracking.trackingIssue', {});
+
+    issue.subject = subject;
+    issue.description = description;
+
+    return await this.redmine.createIssue(issue);
   }
 
   /**
