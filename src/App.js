@@ -70,7 +70,7 @@ module.exports = class App {
           failedTrackings.push({ tracking, issueMatch });
         } else {
           try {
-            const comment = issueMatch.groups.comment ?? '[no comment]';
+            const comment = issueMatch.groups.comment ? issueMatch.groups.comment : '[no comment]';
             const issue = await user.redmine.getIssue(issueMatch.groups.issue);
             const info = user.getRedmineInfo();
             const customFields = this.getCustomFields(user, tracking);
@@ -97,7 +97,7 @@ module.exports = class App {
       const noMatch = [];
       for (const failed of failedTrackings) {
         const date = Moment(failed.tracking.start).format('DD.MM.YYYY');
-        const comment = failed.tracking.description ?? '[no comment]';
+        const comment = failed.tracking.description ? failed.tracking.description : '[no comment]';
         if (failed.error) {
           errors.push('`[' + date + ']` ' + comment + ' - "' + failed.error.ident + '" : `' + failed.issueMatch.groups.issue + '`');
         } else {
