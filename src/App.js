@@ -76,7 +76,6 @@ module.exports = class App {
             await user.redmine.createTimeEntry(issue.id, hours, info.activity, issueMatch.groups.comment, Moment.unix(Strtotime(tracking.start)), customFields);
             await user.toggl.addTag([tracking.id], ['t:transmitted']);
           } catch (error) {
-            console.log(error);
             if (error instanceof RedmineError) {
               user.logger.error(error.ident + ' - {id}', {id: issueMatch.groups.issue});
               failedTrackings.push({ tracking, error, issueMatch });
@@ -174,10 +173,14 @@ module.exports = class App {
   }
 
   async eachUser(predicate) {
-    const users = this.config.get('users');
-    for (let i = 0; i < users.length; i++) {
-      const user = new User(this, i);
-      await predicate(user, i);
+    try {
+      const users = this.config.get('users');
+      for (let i = 0; i < users.length; i++) {
+        const user = new User(this, i);
+        await predicate(user, i);
+      } 
+    } catch (e) {
+      this.log.error(e);
     }
   }
 
@@ -197,6 +200,8 @@ module.exports = class App {
   get logger() {
     if (this._logger === null) {
       this._logger = new FileLogger(Path.join(__dirname, '../../tracker.log'));
+      const errorLogger = new FileLogger(Path.join(__dirname, '../../tracker.error.log'));
+      this._logger.pipe(errorLogger, ['section', 'error']);
     }
     return this._logger;
   }
