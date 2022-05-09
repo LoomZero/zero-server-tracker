@@ -8,6 +8,7 @@ const FileLogger = require('zero-kit/src/util/FileLogger');
 const User = require('./User');
 const RedmineConnector = require('./connector/RedmineConnector');
 const RedmineError = require('./error/RedmineError');
+const ZeroError = require('zero-kit/src/error/ZeroError');
 
 module.exports = class App {
 
@@ -38,6 +39,19 @@ module.exports = class App {
   }
 
   async execute() {
+    try {
+      await this.doExecute();
+    } catch (error) {
+      if (error instanceof ZeroError) {
+        this.log.error(error.ident, {}, error);
+      } else {
+        this.log.error(error);
+      }
+      this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+    }
+  }
+
+  async doExecute() {
     if (this.config.isEmpty()) {
       this.config.save();
       this.log.info('Create config file.');
@@ -122,6 +136,7 @@ module.exports = class App {
       if (errors.length || noMatch.length) {
         await this.createIssue('Tracking für ' + await user.getName() + ' - [' + this.logger.getTimeLog() + ']', description);
       }
+      
       user.logger.info('End user ' + await user.getName());
     });
   }
