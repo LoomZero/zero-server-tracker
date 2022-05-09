@@ -71,7 +71,7 @@ module.exports = class App {
         if (v.description && ignore.includes(v.description.trim())) return false;
         return v.stop !== undefined && (v.tags === undefined || (!v.tags.includes('t:transmitted') && !v.tags.includes('t:no-transmit')));
       });
-      const issuePattern = /#(?<issue>[0-9]+)(.*\s-\s(?<comment>.*))?.*$/;
+      const issuePattern = /#([0-9]+)(.*\s-\s(.*))?.*$/;
 
       user.logger.info(trackings.length + ' relevant trackings ...');
 
@@ -79,6 +79,13 @@ module.exports = class App {
       for (const tracking of trackings) {
         let description = tracking.description || '';
         const issueMatch = description.match(issuePattern);
+
+        if (issueMatch[1] !== undefined || issueMatch[3] !== undefined) {
+          issueMatch.groups = {
+            issue: issueMatch[1],
+            comment: issueMatch[3],
+          };
+        }
 
         if (!issueMatch || !issueMatch.groups) {
           failedTrackings.push({ tracking, issueMatch });
