@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const issuePattern = /#(?<issue>[0-9]+)(.*\s-\s(?<comment>.*))?.*$/;
+const issuePattern = /#([0-9]+)(.*\s-\s(.*))?.*$/;
 
 const descriptions = [
   ['#12345', {issue: '12345'}],
@@ -17,6 +17,10 @@ const descriptions = [
 
 for (const description of descriptions) {
   const match = description[0].match(issuePattern);
+  match.groups = {
+    issue: match[1],
+    comment: match[3],
+  };
 
   let pass = true;
   if (match && match.groups) {
