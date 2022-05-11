@@ -80,7 +80,7 @@ module.exports = class App {
         let description = tracking.description || '';
         const issueMatch = description.match(issuePattern);
 
-        if (issueMatch[1] !== undefined || issueMatch[3] !== undefined) {
+        if (issueMatch && (issueMatch[1] !== undefined || issueMatch[3] !== undefined)) {
           issueMatch.groups = {
             issue: issueMatch[1],
             comment: issueMatch[3],
