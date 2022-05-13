@@ -19,6 +19,10 @@ module.exports = class User {
     this._redmineInfo = null;
   }
 
+  getConfig(name, fallback = null) {
+    return this.app.config.get('users.' + this.id + '.' + name, fallback);
+  }
+
   async ensure() {
     const tags = ['t:transmitted', 't:no-transmit', 't:te:billable', 't:te:nonbillable', 't:te:pauschal'];
     const workspace = await this.getWorkspace();
@@ -41,7 +45,7 @@ module.exports = class User {
    * @returns {(number|null)}
    */
   async getWorkspace() {
-    let workspace = this.app.config.get('users.' + this.id + '.toggl.workspace', null);
+    let workspace = this.getConfig('toggl.workspace');
     if (workspace !== null) return workspace;
     const workspaces = await this.toggl.getWorkspaces();
     return workspaces.shift().id;
@@ -59,30 +63,38 @@ module.exports = class User {
     return data.firstname + ' ' + data.lastname;
   }
 
+  get redmineConfig() {
+    const connection = this.app.config.get('defaults.redmine.api');
+    const config = this.getConfig('redmine');
+
+    for (const key in config) {
+      connection[key] = config[key];
+    }
+    return connection;
+  }
+
   /** @returns {RedmineConnector} */
   get redmine() {
     if (this._redmine === null) {
-      const connection = this.app.config.get('defaults.redmine.api');
-      const config = this.app.config.get('users.' + this.id + '.redmine');
-
-      for (const key in config) {
-        connection[key] = config[key];
-      }
-      this._redmine = new RedmineConnector(this.app, connection);
+      this._redmine = new RedmineConnector(this.app, this.redmineConfig);
     }
     return this._redmine;
+  }
+
+  get togglConfig() {
+    const connection = this.app.config.get('defaults.toggl.api');
+    const config = this.getConfig('toggl');
+
+    for (const key in config) {
+      connection[key] = config[key];
+    }
+    return connection;
   }
 
   /** @returns {TogglConnector} */
   get toggl() {
     if (this._toggl === null) {
-      const connection = this.app.config.get('defaults.toggl.api');
-      const config = this.app.config.get('users.' + this.id + '.toggl');
-
-      for (const key in config) {
-        connection[key] = config[key];
-      }
-      this._toggl = new TogglConnector(this.app, connection);
+      this._toggl = new TogglConnector(this.app, this.togglConfig);
     }
     return this._toggl;
   }
@@ -90,7 +102,7 @@ module.exports = class User {
   getRedmineInfo() {
     if (this._redmineInfo === null) {
       this._redmineInfo = {
-        activity: this.app.config.get('users.' + this.id + '.redmine.activity', this.app.config.get('defaults.redmine.activity', 9)),
+        activity: this.getConfig('redmine.activity', this.app.config.get('defaults.redmine.activity', 9)),
       };
     }
     return this._redmineInfo;
