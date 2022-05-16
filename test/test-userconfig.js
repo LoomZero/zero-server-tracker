@@ -7,12 +7,51 @@ const App = require('../src/App');
   try {
     const app = new App();
     await app.init();
+    const codes = [];
     
-    app.eachUser((/** @type {import('../src/User')} */user) => {
-      const redmine = user.getConfig('redmine.token') === null ? Color.out('error', '✗') : Color.out('question', '✓');
-      const toggl = user.getConfig('toggl.token') === null ? Color.out('error', '✗') : Color.out('question', '✓');
+    app.eachUser(async (/** @type {import('../src/User')} */user) => {
+      const yes = Color.out('question', '✓');
+      const no = Color.out('error', '✗');
+      const redmine = user.getConfig('redmine.token') ? yes : no;
+      const toggl = user.getConfig('toggl.token') ? yes : no;
+
+      let redmineConnection = false;
+      if (redmine === yes) {
+        const duplicate = codes.find((v) => v.key === user.getConfig('redmine.token'));
+        if (duplicate) {
+          Color.log('error', 'Duplicate key for ' + user.getConfig('name') + ' and ' + duplicate.name + ' - ' + duplicate.key + ' [' + duplicate.type + '] : [redmine]');
+        }
+        codes.push({
+          name: user.getConfig('name'),
+          key: user.getConfig('redmine.token'),
+          type: 'redmine',
+        });
+        try {
+          await user.redmine.getCurrentUser();
+          redmineConnection = true;
+        } catch (e) {}
+      }
+      redmineConnection = redmineConnection ? yes : no;
+
+      let togglConnection = false;
+      if (toggl === yes) {
+        const duplicate = codes.find((v) => v.key === user.getConfig('toggl.token'));
+        if (duplicate) {
+          Color.log('error', 'Duplicate key for ' + user.getConfig('name') + ' and ' + duplicate.name + ' - ' + duplicate.key + ' [' + duplicate.type + '] : [toggl]');
+        }
+        codes.push({
+          name: user.getConfig('name'),
+          key: user.getConfig('toggl.token'),
+          type: 'toggl',
+        });
+        try {
+          await user.toggl.getCurrentTimeEntry();
+          togglConnection = true;
+        } catch (e) {}
+      }
+      togglConnection = togglConnection ? yes : no;
       
-      console.log(user.getConfig('name') + ':', 'redmine', redmine, 'toggl', toggl);
+      console.log(user.getConfig('name') + ':', 'redmine', redmine, redmineConnection, 'toggl', toggl, togglConnection);
     });
   } catch (e) {
     console.log(e);
