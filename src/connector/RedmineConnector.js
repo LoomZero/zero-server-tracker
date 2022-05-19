@@ -192,10 +192,10 @@ module.exports = class RedmineConnector extends BaseConnector {
 
   /**
    * @param {import('../../types').T_RedmineCreateIssue} issue
-   * @returns 
+   * @returns {Promise<import('../../types').T_RedmineIssue>}
    */
   createIssue(issue) {
-    return this.promise('create_issue', { issue });
+    return this.promise('create_issue', { issue }).then(data => data.issue);
   }
 
 }

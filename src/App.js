@@ -119,6 +119,7 @@ module.exports = class App {
       for (const failed of failedTrackings) {
         const date = Moment(failed.tracking.start).format('DD.MM.YYYY');
         const comment = failed.tracking.description ? failed.tracking.description : '[no comment]';
+
         if (failed.error) {
           errors.push('`[' + date + ']` ' + comment + ' - "' + failed.error.ident + '" : `' + failed.issueMatch.groups.issue + '`');
         } else {
@@ -141,7 +142,27 @@ module.exports = class App {
       }
 
       if (errors.length || noMatch.length) {
-        await this.createIssue('Tracking für ' + await user.getName() + ' - [' + this.logger.getTimeLog() + ']', description);
+        const issue = await this.createIssue('Tracking für ' + await user.getName() + ' - [' + this.logger.getTimeLog() + ']', description);
+        
+        for (const failed of failedTrackings) {
+          try {
+            const comment = failed.tracking.description ? failed.tracking.description : '[no comment]';
+            const info = user.getRedmineInfo();
+            const customFields = this.getCustomFields(user, failed.tracking);
+            const hours = this.getRoundHours(failed.tracking.duration, roundMinutes, roundMinMinutes);
+
+            user.logger.info('Create unmatched tracking {hours} for {id} with comment {comment} ...', {id: issue.id, comment: comment, hours: hours + 'h'});
+            await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
+            await user.toggl.addTag([failed.tracking.id], ['t:transmitted']);
+          } catch (error) {
+            if (error instanceof RedmineError) {
+              user.logger.error(error.ident + ' - {id}', {id: issueMatch.groups.issue});
+            } else {
+              this.log.error(error);
+              this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+            }
+          }
+        }
       }
       
       user.logger.info('End user ' + await user.getName());
