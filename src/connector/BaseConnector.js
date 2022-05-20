@@ -22,7 +22,7 @@ module.exports = class BaseConnector {
    * @returns {Promise<*>}
    */
   promise(func, ...args) {
-    this.logger.log('debug', 'call ' + func + ' {context}', { context: Reflection.debugContext(args) });
+    this.logger.log('debug', 'call {func} {context}', { func: func, context: JSON.stringify(args) });
     return new Promise((res, rej) => {
       this.api[func](...args, (error, response) => {
         this.logger.log('debug', 'response ' + func + ' {context} response: {response}', {

@@ -17,6 +17,7 @@ module.exports = class App {
     this._logger = null;
     this.log = null;
     this._redmine = null;
+    this.debug = false;
   }
 
   /** @returns {RedmineConnector} */
@@ -38,8 +39,9 @@ module.exports = class App {
     this.log.section('Transmit ' + this.logger.getTimeLog());
   }
 
-  async execute() {
+  async execute(debug) {
     try {
+      this.debug = true;
       await this.doExecute();
     } catch (error) {
       if (error instanceof ZeroError) {
@@ -98,15 +100,30 @@ module.exports = class App {
             const hours = this.getRoundHours(tracking.duration, roundMinutes, roundMinMinutes);
 
             user.logger.info('Create tracking {hours} for {id} with comment {comment} ...', {id: issue.id, comment: comment, hours: hours + 'h'});
-            await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(tracking.start)), customFields);
-            await user.toggl.addTag([tracking.id], ['t:transmitted']);
+            if (this.debug) {
+              user.logger.info('Debug mode no tracking will be done.');
+              console.log('DEBUG:');
+              console.log('  ISSUE:', issue.id);
+              console.log('  HOURS:', hours);
+              console.log('  ACTIVITY:', info.activity);
+              console.log('  COMMENT:', comment);
+              console.log('  START:', tracking.start),
+              console.log('  CUSTOM FIELDS:', JSON.stringify(customFields));
+              console.log('  TRACKING:', tracking.id);
+            } else {
+              await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(tracking.start)), customFields);
+              await user.toggl.addTag([tracking.id], ['t:transmitted']);
+            }
           } catch (error) {
+            if (this.debug) console.log(error);
             if (error instanceof RedmineError) {
               user.logger.error(error.ident + ' - {id}', {id: issueMatch.groups.issue});
               failedTrackings.push({ tracking, error, issueMatch });
             } else {
               this.log.error(error);
-              this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+              if (!this.debug) {
+                await this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+              }
             }
           }
         }
@@ -152,14 +169,30 @@ module.exports = class App {
             const hours = this.getRoundHours(failed.tracking.duration, roundMinutes, roundMinMinutes);
 
             user.logger.info('Create unmatched tracking {hours} for {id} with comment {comment} ...', {id: issue.id, comment: comment, hours: hours + 'h'});
-            await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
-            await user.toggl.addTag([failed.tracking.id], ['t:transmitted']);
+            if (this.debug) {
+              user.logger.info('Debug mode no tracking will be done.');
+              console.log('DEBUG:');
+              console.log('  ISSUE:', issue.id);
+              console.log('  HOURS:', hours);
+              console.log('  ACTIVITY:', info.activity);
+              console.log('  COMMENT:', comment);
+              console.log('  START:', failed.tracking.start),
+              console.log('  CUSTOM FIELDS:', JSON.stringify(customFields));
+              console.log('  TRACKING:', failed.tracking.id);
+              await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
+            } else {
+              await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
+              await user.toggl.addTag([failed.tracking.id], ['t:transmitted']);
+            }
           } catch (error) {
+            if (this.debug) console.log(error);
             if (error instanceof RedmineError) {
-              user.logger.error(error.ident + ' - {id}', {id: issueMatch.groups.issue});
+              user.logger.error(error.ident + ' - {id}', { id: issueMatch.groups.issue });
             } else {
               this.log.error(error);
-              this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+              if (!this.debug) {
+                await this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+              }
             }
           }
         }
