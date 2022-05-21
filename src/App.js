@@ -41,7 +41,7 @@ module.exports = class App {
 
   async execute(debug) {
     try {
-      this.debug = true;
+      this.debug = debug;
       await this.doExecute();
     } catch (error) {
       if (error instanceof ZeroError) {
