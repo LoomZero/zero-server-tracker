@@ -67,7 +67,7 @@ module.exports = class App {
     await this.eachUser(async (/** @type {User} */user) => {
       user.logger.info('Start user ' + await user.getName());
       await user.ensure();
-      const from = this.config.get('tracking.from', '-1 days');
+      const from = this.config.get('tracking.from', '-1 weeks');
       const to = this.config.get('tracking.to', 'now');
       const trackings = (await user.toggl.getTimeEntries(from, to)).filter((v) => {
         if (v.description && ignore.includes(v.description.trim())) return false;
