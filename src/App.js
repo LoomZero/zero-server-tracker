@@ -39,7 +39,7 @@ module.exports = class App {
     this.log.section('Transmit ' + this.logger.getTimeLog());
   }
 
-  async execute(debug) {
+  async execute(debug = false) {
     try {
       this.debug = debug;
       await this.doExecute();
