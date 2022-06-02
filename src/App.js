@@ -143,7 +143,12 @@ module.exports = class App {
         const comment = failed.tracking.description ? failed.tracking.description : '[no comment]';
 
         if (failed.error) {
-          errors.push('`[' + date + ']` ' + comment + ' - "' + failed.error.ident + '" : `' + failed.issueMatch.groups.issue + '`');
+          if (failed.error instanceof RedmineError) {
+            const info = failed.error.toRedmineInfo();
+            errors.push('`[' + date + ']` ' + comment + ' - "' + info.title + '" (' + info.messages.join(', ') + '): `' + failed.issueMatch.groups.issue + '`');
+          } else {
+            errors.push('`[' + date + ']` ' + comment + ' - "' + failed.error.ident + '" : `' + failed.issueMatch.groups.issue + '`');
+          }
         } else {
           noMatch.push('`[' + date + ']` ' + comment);
         }
