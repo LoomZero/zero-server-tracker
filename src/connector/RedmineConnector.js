@@ -24,6 +24,10 @@ module.exports = class RedmineConnector extends BaseConnector {
     return this._api;
   }
 
+  createError(error) {
+    return new RedmineError(error, 'Redmine error', error);
+  }
+
   /**
    * @param {string} error 
    * @returns {import('../../types').T_RedmineError}

@@ -136,6 +136,8 @@
  * @typedef {Object} T_RedmineError
  * @property {number} ErrorCode
  * @property {string} Message
+ * @property {object} [Detail]
+ * @property {string[]} [Detail.errors]
  */
 
 module.exports = {};

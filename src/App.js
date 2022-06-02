@@ -49,7 +49,12 @@ module.exports = class App {
       } else {
         this.log.error(error);
       }
-      this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+      if (error instanceof RedmineError) {
+        const info = error.toRedmineInfo();
+        this.createIssue('Tracker unknown error: "' + info.title + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + info.messages.join("\n") + "\n```");
+      } else {
+        this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+      }
     }
   }
 

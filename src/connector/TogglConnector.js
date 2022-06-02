@@ -27,6 +27,10 @@ module.exports = class TogglConnector extends BaseConnector {
     return this._api;
   }
 
+  createError(error) {
+    return error;
+  }
+
   /**
    * @param {string} from 
    * @param {string} to 

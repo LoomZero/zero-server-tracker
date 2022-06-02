@@ -16,6 +16,8 @@ module.exports = class BaseConnector {
 
   get api() { return null; }
 
+  createError(error) { }
+
   /**
    * @param {string} func 
    * @param  {...any} args 
@@ -29,7 +31,17 @@ module.exports = class BaseConnector {
           context: Reflection.debugContext(args),
           response: typeof response === 'string' ? response : response ? JSON.stringify(response).replace(/\\"/g, '"') : 'null',
         });
-        error ? rej(error) : res(response);
+        if (typeof error === 'string') {
+          const parsed = JSON.parse(error);
+          if (parsed) error = this.createError(parsed);
+          rej(error);
+        } else if (error instanceof Error) {
+          rej(error);
+        } else if (error) {
+          rej(this.createError(error));
+        } else {
+          res(response);
+        }
       });
     });
   }
