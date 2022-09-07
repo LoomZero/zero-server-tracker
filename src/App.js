@@ -94,6 +94,10 @@ module.exports = class App {
           };
         }
 
+        if (issueMatch && issueMatch.groups && issueMatch.groups.comment) {
+          issueMatch.groups.comment = this.stripSaveComment(issueMatch.groups.comment);
+        }
+
         if (!issueMatch || !issueMatch.groups) {
           failedTrackings.push({ tracking, issueMatch });
         } else {
@@ -310,6 +314,16 @@ module.exports = class App {
    */
   channel(channel) {
     return this.logger.channel(channel);
+  }
+
+  /**
+   * @param {string} comment
+   */
+  stripSaveComment(comment) {
+    // filter all chars except of ASCII
+    comment = comment.replace(/([^\x00-\xFF\\]*)/g, '');
+
+    return comment.trim();
   }
 
 }
