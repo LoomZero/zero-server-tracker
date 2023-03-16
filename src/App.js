@@ -145,7 +145,7 @@ module.exports = class App {
       for (const failed of failedTrackings) {
         const date = Moment(failed.tracking.start).format('DD.MM.YYYY');
         let comment = failed.tracking.description ? failed.tracking.description : '[no comment]';
-        comment = this.stripSaveComment(comment, '§');
+        comment = this.stripSaveComment(comment);
 
         if (failed.error) {
           if (failed.error instanceof RedmineError) {
@@ -179,7 +179,7 @@ module.exports = class App {
         for (const failed of failedTrackings) {
           try {
             let comment = failed.tracking.description ? failed.tracking.description : '[no comment]';
-            comment = this.stripSaveComment(comment, '§');
+            comment = this.stripSaveComment(comment);
             const info = user.getRedmineInfo();
             const customFields = this.getCustomFields(user, failed.tracking);
             const hours = this.getRoundHours(failed.tracking.duration, roundMinutes, roundMinMinutes);
@@ -320,11 +320,10 @@ module.exports = class App {
 
   /**
    * @param {string} comment
-   * @param {string} replace
    */
-  stripSaveComment(comment, replace = '') {
+  stripSaveComment(comment) {
     // filter all chars except of ASCII
-    comment = comment.replace(/([^\x00-\xFF\\]*)/g, replace);
+    comment = comment.replace(/([^\x00-\xFF\\]*)/g, '');
 
     return comment.trim();
   }
