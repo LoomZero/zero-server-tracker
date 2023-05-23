@@ -29,7 +29,9 @@ const App = require('../src/App');
         try {
           await user.redmine.getCurrentUser();
           redmineConnection = true;
-        } catch (e) {}
+        } catch (e) {
+          console.log(e);
+        }
       }
       redmineConnection = redmineConnection ? yes : no;
 
@@ -47,7 +49,9 @@ const App = require('../src/App');
         try {
           await user.toggl.getCurrentTimeEntry();
           togglConnection = true;
-        } catch (e) {}
+        } catch (e) {
+          console.log(e);
+        }
       }
       togglConnection = togglConnection ? yes : no;
       

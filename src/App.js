@@ -18,6 +18,7 @@ module.exports = class App {
     this.log = null;
     this._redmine = null;
     this.debug = false;
+    this.current_user = null;
   }
 
   /** @returns {RedmineConnector} */
@@ -70,6 +71,7 @@ module.exports = class App {
     const roundMinMinutes = this.config.get('tracking.roundMinMinutes', false);
 
     await this.eachUser(async (/** @type {User} */user) => {
+      this.current_user = user;
       user.logger.info('Start user ' + await user.getName());
       await user.ensure();
       const from = this.config.get('tracking.from', '-1 weeks');
@@ -131,7 +133,7 @@ module.exports = class App {
             } else {
               this.log.error(error);
               if (!this.debug) {
-                await this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+                await this.createIssue('Tracker unknown error' + (this.current_user ? ' for ' + await this.current_user.getName() : '') + ': "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n" + this.stripSaveComment(JSON.stringify(tracking, null, 2)) + "\n```");
               }
             }
           }
@@ -195,7 +197,7 @@ module.exports = class App {
               console.log('  START:', failed.tracking.start),
               console.log('  CUSTOM FIELDS:', JSON.stringify(customFields));
               console.log('  TRACKING:', failed.tracking.id);
-              await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
+              // await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
             } else {
               await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
               await user.toggl.addTag([failed.tracking.id], ['t:transmitted']);
@@ -207,7 +209,7 @@ module.exports = class App {
             } else {
               this.log.error(error);
               if (!this.debug) {
-                await this.createIssue('Tracker unknown error: "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n```");
+                await this.createIssue('Tracker unknown error' + (this.current_user ? ' for ' + await this.current_user.getName() : '') + ': "' + error.message + '" - [' + this.logger.getTimeLog() + ']', "```js\n" + error.stack + "\n" + this.stripSaveComment(JSON.stringify(failed, null, 2)) + "\n```");
               }
             }
           }
