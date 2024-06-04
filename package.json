@@ -17,9 +17,12 @@
   },
   "homepage": "https://github.com/LoomZero/zero-server-tracker#readme",
   "dependencies": {
+    "install": "^0.13.0",
     "moment": "^2.29.3",
+    "node-fetch": "^2.7.0",
     "node-redmine": "^0.2.2",
     "nodestrtotime": "^1.0.0",
+    "npm": "^10.8.1",
     "zero-kit": "git+https://github.com/LoomZero/zero-kit.git"
   }
 }

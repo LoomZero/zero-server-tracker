@@ -1,6 +1,7 @@
 const Template = require('../helper/Template');
 const Moment = require('moment');
 const Strtotime = require('nodestrtotime');
+const Fetch = require('node-fetch');
 
 module.exports = class TogglV9API {
 
@@ -26,7 +27,7 @@ module.exports = class TogglV9API {
     if (fetchOptions.body && typeof fetchOptions.body !== 'string') {
       fetchOptions.body = JSON.stringify(fetchOptions.body);
     }
-    return fetch(url, fetchOptions);
+    return Fetch(url, fetchOptions);
   }
 
   /**
