@@ -1,4 +1,4 @@
-const Template = require("../helper/Template");
+const Template = require('../helper/Template');
 const Moment = require('moment');
 const Strtotime = require('nodestrtotime');
 
