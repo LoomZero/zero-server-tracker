@@ -47,7 +47,7 @@ const App = require('../src/App');
           type: 'toggl',
         });
         try {
-          await user.toggl.getCurrentTimeEntry();
+          await user.toggl.getTimeEntries('-1 days', 'now');
           togglConnection = true;
         } catch (e) {
           console.log(e);

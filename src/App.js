@@ -72,8 +72,8 @@ module.exports = class App {
 
     await this.eachUser(async (/** @type {User} */user) => {
       this.current_user = user;
+      const workspace = await user.getWorkspace();
       user.logger.info('Start user ' + await user.getName());
-      await user.ensure();
       const from = this.config.get('tracking.from', '-1 weeks');
       const to = this.config.get('tracking.to', 'now');
       const trackings = (await user.toggl.getTimeEntries(from, to)).filter((v) => {
@@ -123,7 +123,7 @@ module.exports = class App {
               console.log('  TRACKING:', tracking.id);
             } else {
               await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(tracking.start)), customFields);
-              await user.toggl.addTag([tracking.id], ['t:transmitted']);
+              await user.toggl.addTag(workspace, tracking.id, ['t:transmitted']);
             }
           } catch (error) {
             if (this.debug) console.log(error);
@@ -200,7 +200,7 @@ module.exports = class App {
               // await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
             } else {
               await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
-              await user.toggl.addTag([failed.tracking.id], ['t:transmitted']);
+              await user.toggl.addTag(workspace, failed.tracking.id, ['t:transmitted']);
             }
           } catch (error) {
             if (this.debug) console.log(error);

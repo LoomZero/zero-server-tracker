@@ -1,5 +1,5 @@
 const RedmineConnector = require('./connector/RedmineConnector');
-const TogglConnector = require('./connector/TogglConnector');
+const TogglV9API = require('./connector/TogglV9API');
 
 module.exports = class User {
 
@@ -21,24 +21,6 @@ module.exports = class User {
 
   getConfig(name, fallback = null) {
     return this.app.config.get('users.' + this.id + '.' + name, fallback);
-  }
-
-  async ensure() {
-    const tags = ['t:transmitted', 't:no-transmit', 't:te:billable', 't:te:nonbillable', 't:te:pauschal'];
-    const workspace = await this.getWorkspace();
-    const items = await this.toggl.getWorkspaceTags(workspace);
-    
-    for (const item of (items || [])) {
-      const index = tags.findIndex((v) => v === item.name);
-      if (index !== -1) {
-        tags.splice(index, 1);
-      }
-    }
-
-    for (const tag of tags) {
-      this.logger.info('{' + this.id + '}: Create tag "' + tag + '" ... ');
-      await this.toggl.createWorkspaceTag(workspace, tag);
-    }
   }
 
   /**
@@ -83,6 +65,7 @@ module.exports = class User {
 
   get togglConfig() {
     const connection = this.app.config.get('defaults.toggl.api');
+    connection.mindate = this.app.config.get('defaults.toggl.mindate');
     const config = this.getConfig('toggl');
 
     for (const key in config) {
@@ -91,10 +74,10 @@ module.exports = class User {
     return connection;
   }
 
-  /** @returns {TogglConnector} */
+  /** @returns {TogglV9API} */
   get toggl() {
     if (this._toggl === null) {
-      this._toggl = new TogglConnector(this.app, this.togglConfig);
+      this._toggl = new TogglV9API(this.app, this.togglConfig);
     }
     return this._toggl;
   }

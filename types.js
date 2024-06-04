@@ -140,4 +140,8 @@
  * @property {string[]} [Detail.errors]
  */
 
+/**
+ * @typedef {function(URL)} T_URLCallback
+ */
+
 module.exports = {};
