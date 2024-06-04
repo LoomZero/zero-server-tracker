@@ -9,7 +9,7 @@ const App = require('../src/App');
     await app.init();
     const codes = [];
     
-    app.eachUser(async (/** @type {import('../src/User')} */user) => {
+    app.eachUser(async (user) => {
       const yes = Color.out('question', '✓');
       const no = Color.out('error', '✗');
       const redmine = user.getConfig('redmine.token') ? yes : no;

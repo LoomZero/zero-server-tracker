@@ -70,7 +70,7 @@ module.exports = class App {
     const roundMinutes = this.config.get('tracking.roundMinutes', false);
     const roundMinMinutes = this.config.get('tracking.roundMinMinutes', false);
 
-    await this.eachUser(async (/** @type {User} */user) => {
+    await this.eachUser(async (user) => {
       this.current_user = user;
       const workspace = await user.getWorkspace();
       user.logger.info('Start user ' + await user.getName());
@@ -278,6 +278,9 @@ module.exports = class App {
     return customFields;
   }
 
+  /**
+   * @param {import('../types').T_UserCallback} predicate 
+   */
   async eachUser(predicate) {
     try {
       const users = this.config.get('users');

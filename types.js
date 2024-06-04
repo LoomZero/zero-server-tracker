@@ -144,4 +144,8 @@
  * @typedef {function(URL)} T_URLCallback
  */
 
+/**
+ * @typedef {function(import('./src/User'))} T_UserCallback
+ */
+
 module.exports = {};

@@ -7,7 +7,7 @@ const App = require('../src/App');
     const app = new App();
     await app.init();
     
-    await app.eachUser(async (/** @type {import('../src/User')} */user) => {
+    await app.eachUser(async (user) => {
       try {
         const workspace = await user.getWorkspace();
         
