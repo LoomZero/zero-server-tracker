@@ -78,7 +78,7 @@ module.exports = class App {
       const to = this.config.get('tracking.to', 'now');
       const trackings = (await user.toggl.getTimeEntries(from, to)).filter((v) => {
         if (v.description && ignore.includes(v.description.trim())) return false;
-        return v.stop !== undefined && (v.tags === undefined || (!v.tags.includes('t:transmitted') && !v.tags.includes('t:no-transmit')));
+        return v.duration > 0 && v.stop !== undefined && (v.tags === undefined || (!v.tags.includes('t:transmitted') && !v.tags.includes('t:no-transmit')));
       });
       const issuePattern = /#([0-9]+)(.*\s-\s(.*))?.*$/;
 
@@ -205,7 +205,7 @@ module.exports = class App {
           } catch (error) {
             if (this.debug) console.log(error);
             if (error instanceof RedmineError) {
-              user.logger.error(error.ident + ' - {id}', { id: failed.tracking.id });
+              user.logger.error(error.ident + ' - {id}', { id: failed.issueMatch.groups.issue });
             } else {
               this.log.error(error);
               if (!this.debug) {
