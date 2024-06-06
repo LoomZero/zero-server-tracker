@@ -19,8 +19,8 @@ module.exports = class TogglV9API {
    * @param {RequestInit} fetchOptions 
    */
   fetch(url, fetchOptions = {}) {
-    fetchOptions.method ??= 'GET';
-    fetchOptions.headers ??= {
+    fetchOptions.method = fetchOptions.method || 'GET';
+    fetchOptions.headers = fetchOptions.headers || {
       'Content-Type': 'application/json',
       'Authorization': this.getAuth(),
     };
