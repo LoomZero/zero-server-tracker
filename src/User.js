@@ -1,5 +1,6 @@
 const RedmineConnector = require('./connector/RedmineConnector');
 const TogglV9API = require('./connector/TogglV9API');
+const UserSkipError = require('./error/UserSkipError');
 
 module.exports = class User {
 
@@ -27,10 +28,16 @@ module.exports = class User {
    * @returns {(number|null)}
    */
   async getWorkspace() {
-    let workspace = this.getConfig('toggl.workspace');
-    if (workspace !== null) return workspace;
-    const workspaces = await this.toggl.getWorkspaces();
-    return workspaces.shift().id;
+    try {
+      let workspace = this.getConfig('toggl.workspace');
+      if (workspace !== null) return workspace;
+      const workspaces = await this.toggl.getWorkspaces();
+      return workspaces.shift().id;
+    } catch (e) {
+      const error = new UserSkipError('getWorkspace()');
+      await error.build();
+      throw error;
+    }
   }
 
   async getUser() {

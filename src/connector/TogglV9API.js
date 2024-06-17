@@ -2,6 +2,7 @@ const Template = require('../helper/Template');
 const Moment = require('moment');
 const Strtotime = require('nodestrtotime');
 const Fetch = require('node-fetch');
+const UserSkipError = require('../error/UserSkipError');
 
 module.exports = class TogglV9API {
 
@@ -61,7 +62,15 @@ module.exports = class TogglV9API {
       url.searchParams.append('end_date', to.toISOString());
     }));
     if (res.status !== 200) {
-      throw new Error(`TogglError ${res.status}: ${await res.json()}`);
+      const error = new UserSkipError('Toggle.getTimeEntries() ${status}: ${response}', {
+        status: res.status,
+        response: async () => {
+          dsfsdf + sdsdf;
+          return await res.json();
+        },
+      });
+      await error.build();
+      throw error;
     }
     return await res.json();
   }
