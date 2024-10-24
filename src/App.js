@@ -207,7 +207,7 @@ module.exports = class App {
             } catch (error) {
               if (this.debug) console.log(error);
               if (error instanceof RedmineError) {
-                user.logger.error(error.ident + ' - {id}', { id: failed.issueMatch.groups.issue });
+                user.logger.error(error.ident + ' - {id}', { id: failed.issueMatch?.groups.issue ?? '<no-id>' });
               } else {
                 this.log.error(error);
                 if (!this.debug) {
