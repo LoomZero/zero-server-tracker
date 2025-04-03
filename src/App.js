@@ -67,6 +67,16 @@ module.exports = class App {
       return;
     }
 
+    // get and set last run
+    const lastRun = this.config.get('storage.lastrun', 0);
+    if (this.debug) {
+      console.log('DEBUG:');
+      console.log('  LAST RUN:', Moment.unix(lastRun).format('HH:mm:ss DD.MM.YYYY'));
+    } else {
+      this.config.set('storage.lastrun', Strtotime('now'));
+      this.config.save();
+    }
+
     const ignore = this.config.get('tracking.ignoreWords', []);
     const roundMinutes = this.config.get('tracking.roundMinutes', false);
     const roundMinMinutes = this.config.get('tracking.roundMinMinutes', false);
@@ -79,8 +89,15 @@ module.exports = class App {
         const from = this.config.get('tracking.from', '-1 weeks');
         const to = this.config.get('tracking.to', 'now');
         const trackings = (await user.toggl.getTimeEntries(from, to)).filter((v) => {
+          // If description is an ignore word, remove it
           if (v.description && ignore.includes(v.description.trim())) return false;
-          return v.duration > 0 && v.stop !== undefined && (v.tags === undefined || (!v.tags.includes('t:transmitted') && !v.tags.includes('t:no-transmit')));
+          // If tracking is not stopped or has tag "t:no-transmit", remove it
+          if (v.duration <= 0 || v.stop === undefined || (v.tags !== undefined && v.tags.includes('t:no-transmit'))) return false;
+          // If last run is givin and is in the past of the tracking start, ignore the "t:transmitted" tag, otherwise check if tracking is already transmitted.
+          if (lastRun === 0 || lastRun > Strtotime(v.start)) {
+            return v.tags === undefined || !v.tags.includes('t:transmitted');
+          }
+          return true;
         });
         const issuePattern = /#([0-9]+)(.*\s-\s(.*))?.*$/;
 
@@ -123,6 +140,7 @@ module.exports = class App {
                 console.log('  START:', tracking.start),
                 console.log('  CUSTOM FIELDS:', JSON.stringify(customFields));
                 console.log('  TRACKING:', tracking.id);
+                console.log('  TAGS:', tracking.tags?.join(', ') || '<NO TAGS>');
               } else {
                 await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(tracking.start)), customFields);
                 await user.toggl.addTag(workspace, tracking.id, ['t:transmitted']);
@@ -199,7 +217,7 @@ module.exports = class App {
                 console.log('  START:', failed.tracking.start),
                 console.log('  CUSTOM FIELDS:', JSON.stringify(customFields));
                 console.log('  TRACKING:', failed.tracking.id);
-                // await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
+                console.log('  TAGS:', failed.tracking.tags?.join(', ') || '<NO TAGS>');
               } else {
                 await user.redmine.createTimeEntry(issue.id, hours, info.activity, comment, Moment.unix(Strtotime(failed.tracking.start)), customFields);
                 await user.toggl.addTag(workspace, failed.tracking.id, ['t:transmitted']);
