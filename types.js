@@ -55,6 +55,14 @@
  */
 
 /**
+ * @typedef {Object} T_CommentMatch
+ * @property {Object} groups
+ * @property {string} groups.issue
+ * @property {string} groups.comment
+ * @property {string} [groups.placeholder]
+ */
+
+/**
  * @callback C_InputValidate
  * @param {string} answer
  * @returns {(string|null)}

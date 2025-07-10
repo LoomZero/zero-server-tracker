@@ -99,25 +99,13 @@ module.exports = class App {
           }
           return true;
         });
-        const issuePattern = /#([0-9]+)(.*\s-\s(.*))?.*$/;
 
         user.logger.info(trackings.length + ' relevant trackings ...');
 
         const failedTrackings = [];
         for (const tracking of trackings) {
           let description = tracking.description || '';
-          const issueMatch = description.match(issuePattern);
-
-          if (issueMatch && (issueMatch[1] !== undefined || issueMatch[3] !== undefined)) {
-            issueMatch.groups = {
-              issue: issueMatch[1],
-              comment: issueMatch[3],
-            };
-          }
-
-          if (issueMatch && issueMatch.groups && issueMatch.groups.comment) {
-            issueMatch.groups.comment = this.stripSaveComment(issueMatch.groups.comment);
-          }
+          const issueMatch = this.parseTrackingComment(description);
 
           if (!issueMatch || !issueMatch.groups) {
             failedTrackings.push({ tracking, issueMatch });
@@ -358,6 +346,43 @@ module.exports = class App {
     comment = comment.replace(/([^\x00-\xFF\\]*)/g, '');
 
     return comment.trim();
+  }
+
+  /**
+   * 
+   * @param {string} tracking 
+   * @returns {import('../types').T_CommentMatch}
+   */
+  parseTrackingComment(description) {
+    const issuePattern = /#([0-9a-z]+)(.*\s-\s(.*))?.*$/;
+    const issueMatch = description.match(issuePattern);
+
+    // Create groups value: issue, comment
+    if (issueMatch && (issueMatch[1] !== undefined || issueMatch[3] !== undefined)) {
+      issueMatch.groups = {
+        issue: issueMatch[1],
+        comment: issueMatch[3],
+      };
+    }
+
+    // Check for placeholder and add group placeholder
+    if (issueMatch && issueMatch.groups && issueMatch.groups.issue) {
+      if (parseInt(issueMatch.groups.issue) + '' !== issueMatch.groups.issue) {
+        const placeholders = this.config.get('placeholders', {});
+        if (placeholders[issueMatch.groups.issue] === undefined) {
+          return null;
+        } else {
+          issueMatch.groups.placeholder = issueMatch.groups.issue;
+          issueMatch.groups.issue = placeholders[issueMatch.groups.issue] + '';
+        }
+      }
+    }
+
+    // Strip comment from unsupported charackters
+    if (issueMatch && issueMatch.groups && issueMatch.groups.comment) {
+      issueMatch.groups.comment = this.stripSaveComment(issueMatch.groups.comment);
+    }
+    return issueMatch;
   }
 
 }
