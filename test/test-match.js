@@ -20,9 +20,10 @@ const descriptions = [
   ['#12345 - comment more  ', {issue: '12345', comment: 'comment more'}],
   ['test #12345 - comment', {issue: '12345', comment: 'comment'}],
   ['test #12345 - comment - real comment', {issue: '12345', comment: 'real comment'}],
-  ['test #intern - comment - real comment', {issue: '12345', placeholder: 'intern', comment: 'real comment'}],
-  ['test #daily - comment - real comment', {issue: '23456', placeholder: 'daily', comment: 'real comment'}],
+  ['test #intern - comment - real comment', {issue: '14605', placeholder: 'intern', comment: 'real comment'}],
+  ['test #daily - comment - real comment', {issue: '44262', placeholder: 'daily', comment: 'real comment'}],
   ['test #1234nothing - comment - real comment', null],
+  ['#daily', {issue: '44262', placeholder: 'daily'}],
 ];
 
 for (const description of descriptions) {
