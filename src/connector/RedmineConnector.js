@@ -1,5 +1,7 @@
 const Redmine = require('node-redmine');
 
+const Reflection = require('zero-kit/src/util/Reflection');
+
 const BaseConnector = require('./BaseConnector');
 const RedmineError = require('../error/RedmineError');
 
@@ -200,6 +202,37 @@ module.exports = class RedmineConnector extends BaseConnector {
    */
   createIssue(issue) {
     return this.promise('create_issue', { issue }).then(data => data.issue);
+  }
+
+  /**
+   * @param {number} issue_id
+   * @returns {Promise<boolean>}
+   */
+  deleteIssue(issue_id) {
+    this.logger.log('debug', 'call {func} {context}', { func: 'deleteIssue', context: JSON.stringify([issue_id]) });
+    return new Promise((res, rej) => {
+      this.api.delete_issue(issue_id, (error, response) => {
+        this.logger.log('debug', 'response deleteIssue {context} response: {response}', {
+          context: Reflection.debugContext([issue_id]),
+          response: typeof response === 'string' ? response : response ? JSON.stringify(response).replace(/\\"/g, '"') : 'null',
+        });
+        if (typeof error === 'string') {
+          const parsed = JSON.parse(error);
+          // if no content is used, all is fine.
+          if (parsed && parsed.ErrorCode === 204) {
+            res(true);
+          }
+          if (parsed) error = this.createError(parsed);
+          rej(error);
+        } else if (error instanceof Error) {
+          rej(error);
+        } else if (error) {
+          rej(this.createError(error));
+        } else {
+          res(true);
+        }
+      });
+    });
   }
 
 }

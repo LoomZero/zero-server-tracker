@@ -8,10 +8,24 @@ const App = require('../src/App');
     const app = new App();
     await app.init();
     const codes = [];
+    const yes = Color.out('question', '✓');
+    const no = Color.out('error', '✗');
+
+    let trackingUserCreate = false;
+    let trackingUserDelete = false;
+
+    try {
+      const trackingIssue = await app.createIssue('Test Issue', 'This is a test issue for the server tracker userconfig test script.');
+      trackingUserCreate = trackingIssue && trackingIssue.id;
+      if (trackingUserCreate) {
+        trackingUserDelete = await app.redmine.deleteIssue(trackingIssue.id);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    console.log('Tracking user creation: ' + (trackingUserCreate ? yes : no) + ' ' + (trackingUserDelete ? yes : no));
     
     app.eachUser(async (user) => {
-      const yes = Color.out('question', '✓');
-      const no = Color.out('error', '✗');
       const redmine = user.getConfig('redmine.token') ? yes : no;
       const toggl = user.getConfig('toggl.token') ? yes : no;
 
