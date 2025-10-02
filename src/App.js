@@ -81,7 +81,7 @@ module.exports = class App {
     const roundMinutes = this.config.get('tracking.roundMinutes', false);
     const roundMinMinutes = this.config.get('tracking.roundMinMinutes', false);
 
-    await this.eachUser(async (user) => {
+    await this.eachUser(async user => {
       try {
         this.current_user = user;
         user.logger.info('Start user ' + await user.getName());
@@ -91,8 +91,8 @@ module.exports = class App {
         const trackings = (await user.toggl.getTimeEntries(from, to)).filter((v) => {
           // If description is an ignore word, remove it
           if (v.description && ignore.includes(v.description.trim())) return false;
-          // If tracking is not stopped or has tag "t:no-transmit", remove it
-          if (v.duration <= 0 || v.stop === undefined || (v.tags !== undefined && v.tags.includes('t:no-transmit'))) return false;
+          // If tracking is not stopped or has tag "t:no-transmit" or is under 1 minute, remove it
+          if (v.duration <= 60 || v.stop === undefined || (v.tags !== undefined && v.tags.includes('t:no-transmit'))) return false;
           // If last run is givin and is in the past of the tracking start, ignore the "t:transmitted" tag, otherwise check if tracking is already transmitted.
           if (lastRun === 0 || lastRun > Strtotime(v.start)) {
             return v.tags === undefined || !v.tags.includes('t:transmitted');
